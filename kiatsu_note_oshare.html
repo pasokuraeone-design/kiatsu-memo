@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>気圧ノート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#263142;
+    --paper:#f7f3eb;
+    --paper2:#efe8dc;
+    --panel:rgba(255,255,255,.82);
+    --panel-solid:#fffdf9;
+    --line:rgba(73,70,62,.12);
+    --blue:#6989ae;
+    --blue-deep:#45698f;
+    --purple:#8776a3;
+    --orange:#c98c64;
+    --warn:#b65e58;
+    --muted:#7b786f;
+    --good:#63856f;
+    --shadow:0 16px 45px rgba(55,47,39,.08);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 10% 0%, rgba(255,255,255,.9), transparent 30%),
+      linear-gradient(180deg,var(--paper) 0%, #f3eee5 60%, var(--paper2) 100%);
+    color:var(--ink);
+    font-family:'Noto Sans JP',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .app{
+    width:min(100%,520px);
+    margin:0 auto;
+    padding:22px 17px 60px;
+  }
+
+  .top{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .brand h1{
+    margin:0;
+    font-family:'DM Serif Display','Noto Sans JP',serif;
+    font-size:27px;
+    font-weight:400;
+    letter-spacing:.01em;
+  }
+  .brand p{
+    margin:4px 0 0;
+    color:var(--muted);
+    font-size:11px;
+    letter-spacing:.03em;
+  }
+  .loc{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:7px 10px;
+    margin-top:2px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:rgba(255,255,255,.6);
+    color:var(--muted);
+    font-size:10px;
+    white-space:nowrap;
+    backdrop-filter:blur(8px);
+  }
+  .loc::before{
+    content:'';
+    width:6px;height:6px;border-radius:50%;
+    background:var(--good);
+    box-shadow:0 0 0 3px rgba(99,133,111,.12);
+  }
+
+  .hero{
+    position:relative;
+    overflow:hidden;
+    padding:24px 22px 20px;
+    border:1px solid rgba(255,255,255,.7);
+    border-radius:26px;
+    background:
+      linear-gradient(145deg,rgba(255,255,255,.96),rgba(255,255,255,.74));
+    box-shadow:var(--shadow);
+    isolation:isolate;
+  }
+  .hero-bg{
+    position:absolute;inset:0;
+    opacity:.95;
+    z-index:-1;
+    transition:background 1s ease;
+  }
+  .hero-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .eyebrow{
+    color:var(--muted);
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.08em;
+  }
+  .updated{
+    font-size:10px;
+    color:var(--muted);
+  }
+
+  .reading{
+    display:flex;
+    align-items:flex-end;
+    gap:9px;
+    margin-top:9px;
+  }
+  .reading .num{
+    font-family:'DM Serif Display',serif;
+    font-size:76px;
+    line-height:.95;
+    letter-spacing:-.04em;
+  }
+  .reading .unit{
+    padding-bottom:10px;
+    color:var(--muted);
+    font-size:14px;
+    font-weight:500;
+  }
+
+  .trend-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    margin-top:14px;
+    padding:8px 11px;
+    border-radius:999px;
+    background:rgba(255,255,255,.64);
+    border:1px solid rgba(255,255,255,.7);
+    font-size:12px;
+    font-weight:600;
+    backdrop-filter:blur(10px);
+  }
+  .trend-arrow{font-size:16px}
+
+  .hero-message{
+    margin-top:13px;
+    font-size:13px;
+    line-height:1.7;
+    color:#4d5662;
+  }
+
+  .forecast-card{
+    margin-top:13px;
+    padding:13px 14px;
+    border-radius:16px;
+    background:rgba(69,105,143,.07);
+    border:1px solid rgba(69,105,143,.09);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .forecast-card .label{
+    font-size:10px;
+    color:var(--muted);
+    margin-bottom:3px;
+  }
+  .forecast-card .main{
+    font-size:13px;
+    font-weight:700;
+  }
+  .forecast-card .badge{
+    flex:0 0 auto;
+    font-size:11px;
+    padding:6px 9px;
+    border-radius:999px;
+    background:rgba(255,255,255,.7);
+  }
+
+  .alert{
+    margin-top:14px;
+    padding:14px 15px;
+    background:rgba(182,94,88,.10);
+    border:1px solid rgba(182,94,88,.15);
+    border-radius:17px;
+    font-size:12px;
+    line-height:1.7;
+    color:#72403b;
+    display:none;
+  }
+  .alert.show{display:block}
+
+  .section{margin-top:27px}
+  .section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:end;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .section-title{
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:.02em;
+  }
+  .section-sub{
+    color:var(--muted);
+    font-size:10px;
+  }
+
+  .chart-wrap{
+    background:var(--panel);
+    border:1px solid rgba(255,255,255,.75);
+    border-radius:22px;
+    padding:14px 10px 10px;
+    box-shadow:0 8px 28px rgba(55,47,39,.05);
+    backdrop-filter:blur(10px);
+  }
+  svg{display:block;width:100%;height:auto}
+  .axis-label{
+    font-size:9px;
+    fill:var(--muted);
+    font-family:'Noto Sans JP',sans-serif;
+  }
+  .now-tag{
+    font-size:10px;
+    fill:var(--warn);
+    font-weight:700;
+  }
+
+  .legend{
+    display:flex;
+    gap:12px;
+    padding:0 5px 5px;
+    color:var(--muted);
+    font-size:9px;
+  }
+  .legend span{
+    display:inline-flex;align-items:center;gap:5px;
+  }
+  .legend i{
+    display:block;width:12px;height:2px;border-radius:10px;background:var(--blue);
+  }
+  .legend .future i{
+    background:transparent;
+    border-top:2px dashed var(--purple);
+    height:0;
+  }
+
+  .log-buttons{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+  }
+  .log-btn{
+    border:1px solid rgba(255,255,255,.8);
+    border-radius:18px;
+    padding:13px 4px 12px;
+    background:rgba(255,255,255,.76);
+    font-family:inherit;
+    color:var(--ink);
+    cursor:pointer;
+    box-shadow:0 7px 20px rgba(55,47,39,.045);
+    transition:.18s ease;
+  }
+  .log-btn:hover{transform:translateY(-2px)}
+  .log-btn:active{transform:scale(.97)}
+  .emoji{display:block;font-size:23px;margin-bottom:4px}
+  .log-btn .txt{font-size:10.5px;font-weight:600}
+  .log-btn[data-level="0"]{background:rgba(224,239,228,.68)}
+  .log-btn[data-level="1"]{background:rgba(247,243,220,.7)}
+  .log-btn[data-level="2"]{background:rgba(247,227,209,.72)}
+  .log-btn[data-level="3"]{background:rgba(244,215,211,.72)}
+
+  .log-saved{
+    min-height:20px;
+    margin-top:8px;
+    text-align:center;
+    font-size:11px;
+    color:var(--good);
+  }
+
+  .history{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    background:transparent;
+    border:none;
+    box-shadow:none;
+    padding:0;
+  }
+  .history-row{
+    display:grid;
+    grid-template-columns:86px 1fr auto;
+    align-items:center;
+    gap:10px;
+    padding:12px 14px;
+    background:rgba(255,255,255,.7);
+    border:1px solid rgba(255,255,255,.82);
+    border-radius:16px;
+    box-shadow:0 6px 18px rgba(55,47,39,.04);
+  }
+  .history-row .time{font-size:10px;color:var(--muted)}
+  .history-row .lv{font-size:12px;font-weight:600}
+  .history-row .pressure{font-size:10px;color:var(--muted)}
+  .history-empty{
+    padding:22px;
+    border-radius:18px;
+    background:rgba(255,255,255,.55);
+    text-align:center;
+    font-size:11px;
+    color:var(--muted);
+  }
+
+  .note{
+    margin-top:28px;
+    padding:14px 15px;
+    border-radius:16px;
+    background:rgba(255,255,255,.36);
+    color:var(--muted);
+    font-size:10px;
+    line-height:1.8;
+  }
+
+  @media(max-width:380px){
+    .reading .num{font-size:66px}
+    .log-btn .txt{font-size:9.5px}
+    .emoji{font-size:21px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand">
+      <h1>気圧ノート</h1>
+      <p>今日の空と、わたしの調子</p>
+    </div>
+    <div class="loc" id="locLabel">位置情報を取得中…</div>
+  </div>
+
+  <section class="hero">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-top">
+      <div class="eyebrow">CURRENT PRESSURE</div>
+      <div class="updated" id="updatedAt"></div>
+    </div>
+
+    <div class="reading">
+      <span class="num" id="currentPressure">–</span>
+      <span class="unit">hPa</span>
+    </div>
+
+    <div class="trend-pill">
+      <span class="trend-arrow" id="trendArrow">→</span>
+      <span id="trendText">読み込み中…</span>
+    </div>
+
+    <div class="hero-message" id="heroMessage">
+      気圧の動きを読み込んでいます。
+    </div>
+
+    <div class="forecast-card">
+      <div>
+        <div class="label">これから6時間</div>
+        <div class="main" id="forecastText">予報を確認中…</div>
+      </div>
+      <div class="badge" id="forecastBadge">☁️</div>
+    </div>
+  </section>
+
+  <div class="alert" id="alertBox"></div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">気圧の流れ</div>
+      <div class="section-sub">過去48時間 ＋ これから24時間</div>
+    </div>
+    <div class="chart-wrap">
+      <svg id="chartSvg" viewBox="0 0 440 190" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend">
+        <span><i></i>ここまで</span>
+        <span class="future"><i></i>これから</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">今の体調は？</div>
+      <div class="section-sub">タップするだけ</div>
+    </div>
+    <div class="log-buttons">
+      <button class="log-btn" data-level="0"><span class="emoji">😆</span><span class="txt">絶好調</span></button>
+      <button class="log-btn" data-level="1"><span class="emoji">🙂</span><span class="txt">普通</span></button>
+      <button class="log-btn" data-level="2"><span class="emoji">😮‍💨</span><span class="txt">だるい</span></button>
+      <button class="log-btn" data-level="3"><span class="emoji">😣</span><span class="txt">しんどい</span></button>
+    </div>
+    <div class="log-saved" id="logSaved"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">わたしの記録</div>
+      <div class="section-sub">最近20件</div>
+    </div>
+    <div class="history" id="historyList">
+      <div class="history-empty">まだ記録がありません</div>
+    </div>
+  </div>
+
+  <div class="note">
+    気圧データは Open-Meteo の公開APIから取得しています。体調との関係には個人差があります。医療上の診断ではなく、日々の傾向を振り返るための目安としてお使いください。
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'symptom-log-v2';
+let pressureData = null;
+const levelLabels = ['😆 絶好調','🙂 普通','😮‍💨 だるい','😣 しんどい'];
+
+function fmtTime(d){
+  return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function setHeroBg(pressure, delta){
+  const bg = document.getElementById('heroBg');
+  if(delta <= -4){
+    bg.style.background = 'radial-gradient(circle at 88% 0%, rgba(183,111,122,.20), transparent 42%), radial-gradient(circle at 5% 100%, rgba(135,118,163,.18), transparent 48%)';
+  }else if(delta >= 4){
+    bg.style.background = 'radial-gradient(circle at 90% 0%, rgba(104,145,179,.24), transparent 42%), radial-gradient(circle at 0% 100%, rgba(126,157,139,.15), transparent 50%)';
+  }else{
+    bg.style.background = 'radial-gradient(circle at 90% -5%, rgba(105,137,174,.18), transparent 45%), radial-gradient(circle at 0% 100%, rgba(215,190,160,.14), transparent 50%)';
+  }
+}
+
+async function getLocation(){
+  return new Promise(resolve=>{
+    if(!navigator.geolocation){
+      resolve({lat:34.7667,lon:134.8500,fallback:true});
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      p=>resolve({lat:p.coords.latitude,lon:p.coords.longitude,fallback:false}),
+      ()=>resolve({lat:34.7667,lon:134.8500,fallback:true}),
+      {timeout:8000,maximumAge:600000}
+    );
+  });
+}
+
+async function fetchPressure(lat,lon){
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=surface_pressure&past_days=2&forecast_days=2&timezone=auto`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('通信エラー');
+  const data = await res.json();
+  return {
+    times:data.hourly.time.map(t=>new Date(t)),
+    values:data.hourly.surface_pressure
+  };
+}
+
+function currentIndex(times){
+  const now = new Date();
+  let idx=0;
+  for(let i=0;i<times.length;i++){
+    if(times[i] <= now) idx=i;
+  }
+  return idx;
+}
+
+function getMessage(delta6,future6){
+  if(future6 <= -5) return 'このあと気圧が大きく下がりそう。予定を詰め込みすぎず、少し余白を。';
+  if(delta6 <= -5) return '気圧が大きく下がっています。いつもより疲れやすい日は、無理をしすぎないで。';
+  if(future6 >= 5) return 'このあと気圧は上向き。少しずつ空気が切り替わっていきそうです。';
+  if(Math.abs(future6) < 2) return 'この先もしばらく穏やか。いつものペースで過ごせそうです。';
+  if(future6 < 0) return 'ゆっくり気圧が下がる予報。体調の小さな変化をメモしておくと振り返りやすいです。';
+  return '気圧はゆるやかに上昇する予報。今日の調子も一緒に残しておきましょう。';
+}
+
+function renderHero(){
+  const idx=currentIndex(pressureData.times);
+  const cur=pressureData.values[idx];
+  const past=pressureData.values[Math.max(0,idx-6)];
+  const future=pressureData.values[Math.min(pressureData.values.length-1,idx+6)];
+  const delta6=cur-past;
+  const future6=future-cur;
+
+  document.getElementById('currentPressure').textContent=cur.toFixed(1);
+  setHeroBg(cur,delta6);
+
+  const arrow=document.getElementById('trendArrow');
+  const trend=document.getElementById('trendText');
+
+  if(delta6<=-1.5){
+    arrow.textContent='↓';
+    trend.textContent=`6時間で ${Math.abs(delta6).toFixed(1)} hPa 下降`;
+  }else if(delta6>=1.5){
+    arrow.textContent='↑';
+    trend.textContent=`6時間で ${delta6.toFixed(1)} hPa 上昇`;
+  }else{
+    arrow.textContent='→';
+    trend.textContent='ほぼ安定';
+  }
+
+  document.getElementById('updatedAt').textContent='更新 '+fmtTime(new Date());
+  document.getElementById('heroMessage').textContent=getMessage(delta6,future6);
+
+  const fText=document.getElementById('forecastText');
+  const fBadge=document.getElementById('forecastBadge');
+  if(future6<=-1){
+    fText.textContent=`${Math.abs(future6).toFixed(1)} hPa 下がる予報`;
+    fBadge.textContent=future6<=-5?'⚠️ 急降下':'↘︎ 下降';
+  }else if(future6>=1){
+    fText.textContent=`${future6.toFixed(1)} hPa 上がる予報`;
+    fBadge.textContent='↗︎ 上昇';
+  }else{
+    fText.textContent='大きな変化はなさそう';
+    fBadge.textContent='☁️ 安定';
+  }
+
+  const alertBox=document.getElementById('alertBox');
+  if(future6<=-5){
+    alertBox.classList.add('show');
+    alertBox.textContent=`⚠️ この先6時間で約${Math.abs(future6).toFixed(1)}hPa下がる予報です。頭痛・だるさなどが出やすい方は、早めに休憩を取れる予定にしておくと安心です。`;
+  }else if(delta6<=-5){
+    alertBox.classList.add('show');
+    alertBox.textContent=`⚠️ 直近6時間で約${Math.abs(delta6).toFixed(1)}hPa低下しています。体調に変化があれば下のボタンから記録しておきましょう。`;
+  }else{
+    alertBox.classList.remove('show');
+  }
+}
+
+function renderChart(){
+  const svg=document.getElementById('chartSvg');
+  const W=440,H=190,padL=40,padR=12,padT=18,padB=26;
+  const times=pressureData.times;
+  const vals=pressureData.values;
+  const idx=currentIndex(times);
+
+  const start=Math.max(0,idx-48);
+  const end=Math.min(vals.length-1,idx+24);
+  const viewVals=vals.slice(start,end+1);
+  const viewTimes=times.slice(start,end+1);
+  const nowIdx=idx-start;
+
+  const minV=Math.min(...viewVals)-1;
+  const maxV=Math.max(...viewVals)+1;
+  const plotW=W-padL-padR;
+  const plotH=H-padT-padB;
+  const n=viewVals.length;
+
+  const xFor=i=>padL+(i/(n-1))*plotW;
+  const yFor=v=>padT+(1-(v-minV)/(maxV-minV))*plotH;
+
+  const makePath=(from,to)=>{
+    let p='';
+    for(let i=from;i<=to;i++){
+      p+=(i===from?'M':'L')+xFor(i).toFixed(1)+','+yFor(viewVals[i]).toFixed(1)+' ';
+    }
+    return p;
+  };
+
+  const pastPath=makePath(0,nowIdx);
+  const futurePath=makePath(nowIdx,n-1);
+
+  const step=5;
+  const gridVals=[];
+  let g=Math.ceil(minV/step)*step;
+  while(g<=maxV){gridVals.push(g);g+=step;}
+
+  const gridHtml=gridVals.map(v=>{
+    const y=yFor(v);
+    return `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="rgba(73,70,62,.10)" stroke-width="1"/>
+    <text x="${padL-6}" y="${y+3}" text-anchor="end" class="axis-label">${v}</text>`;
+  }).join('');
+
+  let labels='';
+  for(let i=0;i<n;i+=12){
+    const x=xFor(i);
+    const t=viewTimes[i];
+    labels+=`<text x="${x}" y="${H-5}" text-anchor="middle" class="axis-label">${t.getMonth()+1}/${t.getDate()} ${String(t.getHours()).padStart(2,'0')}時</text>`;
+  }
+
+  const nowX=xFor(nowIdx),nowY=yFor(viewVals[nowIdx]);
+
+  svg.innerHTML=`
+    <defs>
+      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#6989ae" stop-opacity=".20"/>
+        <stop offset="100%" stop-color="#6989ae" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${gridHtml}
+    <path d="${pastPath} L${nowX},${padT+plotH} L${xFor(0)},${padT+plotH} Z" fill="url(#areaGrad)"/>
+    <path d="${pastPath}" fill="none" stroke="#6989ae" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${futurePath}" fill="none" stroke="#8776a3" stroke-width="2.3" stroke-dasharray="5,5" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="${nowX}" y1="${padT}" x2="${nowX}" y2="${padT+plotH}" stroke="#b65e58" stroke-width="1" stroke-dasharray="3,4"/>
+    <circle cx="${nowX}" cy="${nowY}" r="4" fill="#b65e58"/>
+    <text x="${nowX}" y="11" text-anchor="middle" class="now-tag">NOW</text>
+    ${labels}
+  `;
+}
+
+async function loadPressure(){
+  const loc=await getLocation();
+  document.getElementById('locLabel').textContent=loc.fallback?'加古川付近':'現在地';
+  try{
+    pressureData=await fetchPressure(loc.lat,loc.lon);
+    renderHero();
+    renderChart();
+  }catch(e){
+    document.getElementById('trendText').textContent='データを取得できませんでした';
+    document.getElementById('heroMessage').textContent='通信状態を確認して、もう一度ページを開いてください。';
+    document.getElementById('forecastText').textContent='取得できませんでした';
+  }
+}
+
+const hasClaudeStorage=typeof window.storage!=='undefined';
+
+async function loadHistory(){
+  try{
+    if(hasClaudeStorage){
+      const res=await window.storage.get(STORAGE_KEY);
+      return res?JSON.parse(res.value):[];
+    }
+    const raw=localStorage.getItem(STORAGE_KEY);
+    return raw?JSON.parse(raw):[];
+  }catch(e){return[];}
+}
+
+async function saveHistory(list){
+  try{
+    if(hasClaudeStorage){
+      await window.storage.set(STORAGE_KEY,JSON.stringify(list));
+    }else{
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(list));
+    }
+  }catch(e){}
+}
+
+function renderHistory(list){
+  const wrap=document.getElementById('historyList');
+  if(!list.length){
+    wrap.innerHTML='<div class="history-empty">まだ記録がありません<br><span style="font-size:10px">今日の体調をタップすると、ここに残ります。</span></div>';
+    return;
+  }
+  wrap.innerHTML=list.slice().reverse().slice(0,20).map(item=>{
+    const d=new Date(item.t);
+    return `<div class="history-row">
+      <div class="time">${fmtTime(d)}</div>
+      <div class="lv">${levelLabels[item.level]}</div>
+      <div class="pressure">${item.pressure!=null?item.pressure.toFixed(1)+' hPa':'–'}</div>
+    </div>`;
+  }).join('');
+}
+
+async function logSymptom(level){
+  let pressureNow=null;
+  if(pressureData){
+    const idx=currentIndex(pressureData.times);
+    pressureNow=pressureData.values[idx];
+  }
+  const list=await loadHistory();
+  list.push({t:Date.now(),level,pressure:pressureNow});
+  await saveHistory(list);
+  renderHistory(list);
+  const saved=document.getElementById('logSaved');
+  saved.textContent='✓ 記録しました';
+  setTimeout(()=>saved.textContent='',1800);
+}
+
+document.querySelectorAll('.log-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>logSymptom(parseInt(btn.dataset.level,10)));
+});
+
+(async function init(){
+  const list=await loadHistory();
+  renderHistory(list);
+  await loadPressure();
+})();
+</script>
+</body>
+</html>
